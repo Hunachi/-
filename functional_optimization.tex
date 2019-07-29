@@ -1,0 +1,159 @@
+\documentclass[11pt,a4paper]{jsarticle}
+%
+\usepackage{amsmath,amssymb}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{amsthm}
+\usepackage{ascmac}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+%
+\setlength{\textwidth}{\fullwidth}
+\setlength{\textheight}{39\baselineskip}
+\addtolength{\textheight}{\topskip}
+\setlength{\voffset}{-0.5in}
+\setlength{\headsep}{0.3in}
+
+\newcommand{\divergence}{\mathrm{div}\,}  %ダイバージェンス
+\newcommand{\grad}{\mathrm{grad}\,}  %グラディエント
+\newcommand{\rot}{\mathrm{rot}\,}  %ローテーション
+\newtheorem{thm}{定理}[section]
+\newtheorem{lem}[thm]{補題}
+\newtheorem{axm}[thm]{公理}
+\newcommand{\Axmref}[1]{公理\ref{#1}}
+\newcommand{\Equref}[1]{式(\ref{equ:#1})}
+\newcommand{\mbf}[1]{\mbox{\boldmath $#1$}}
+\newcommand{\ave}[1]{\langle{#1}\rangle}
+\newcommand{\itemb}[2]{\begin{itembox}[l]{#1}$#2$\end{itembox}}
+\newcommand{\ov}[1]{\overline{#1}}
+\newcommand{\eq}[1]{ \begin{equation}#1 \end{equation}}
+%
+
+\title{関数の最適化}
+\author{近藤 華}
+\date{2019年 5月 28日}
+\begin{document}
+\maketitle
+教科書だけでは分かりずらいところをこのプリントで補助しています．
+基本，教科書を見てわからなかったらこのプリントを頼ってください．
+
+\section{勾配法}
+\subsection{1変数の場合}
+\bf{重要な語句}\\
+\bf{最適化}：与えられた条件下で，関数の値を最大または最小にする変数の値を求めること．\\
+\bf{勾配法}：やや原始的な最適化の方法．詳しい方法は以下に擬似コードにて示す．\\
+
+\begin{algorithm}                      
+\caption{\bf{procedure} $search(f(x),f'(x))$}         
+\label{alg1}                          
+\begin{algorithmic}
+\STATE $x \gets x_{0},\   \ h \gets h_{0}$
+\WHILE{$|f(x')| < \epsilon$}
+\STATE $h \gets sgn(f(x'))|h|,\    \ X \gets x, \    \ X' \gets x + h$
+\IF{$f(X) < f'(X)$}
+\WHILE{$f(X) < f(X')$}
+\STATE $h \gets 2h,\    \ X \gets X', \    \ X' \gets X + h$
+\ENDWHILE
+\STATE $h \gets h/2,\    \ x \gets X$
+\ELSE
+\WHILE{$f(X) > f(X')$}
+\STATE $h \gets h/2,\    \ X' \gets X' - h$
+\ENDWHILE
+\STATE $h \gets 2h,\    \ x \gets X'$
+\ENDIF
+\ENDWHILE
+\RETURN x
+\end{algorithmic}
+\end{algorithm}
+
+
+★教科書の補足★\\
+- アルゴリズム3.1に出てくる符号関数（sgn）について．\\
+f(x)は凸関数なので，$f'(x)>0$の時，解はxの正の方向にあり，逆に$f'(x)<0$の時はxの負の方向に解があるから．（要に，もしf(x)が凹関数で，最小値を求めたい場合は符号が反転する．）\\
+
+他の($f'(x)=0を満たすxが唯一の時に使える$)最適化の方法
+\begin{itemize}
+  \item 二分探索：一般にn分探索のどれよりも高速らしい．
+  \item セカント法：ニュートン法を改良し微分できない関数にも対応した方法．
+  \item はさみうち法：解が必ず$f'(a)f'(b)<0$を満たす区間$(a,b)$に存在する事を利用する方法．
+\end{itemize}
+
+\subsection{多変数の場合}
+\bf{重要な語句}\\
+初期値：$最大値をとる点に近いと思われる点(x_{0},y_{0})のこと．$\\
+探索直線：ある点(x',y')における勾配$\nabla f (x',y')$の方向の直線のこと．\\
+直線探索：探索直線上でfが最大になる点を探すこと．\\
+教科書(3.2)式となり，定理3.1が導かれる．\\
+多変数の勾配法の擬似コードを以下に示す．\\
+
+\begin{algorithm}                      
+\caption{\bf{procedure} $hill\_climbing(f(x),\nabla f(x))$}         
+\label{alg2}                          
+\begin{algorithmic}
+\STATE $x \gets x_{0}$
+\WHILE{$|\Delta \mbf{x}|\geq \delta$}
+\STATE $ t \gets search(F,F')~where~F(t)=f(\mbf{x}+t\nabla  f(\mbf{x}))$
+\STATE $ \Delta\mbf{x} \gets t\nabla f(\mbf{x}),\    \ \mbf{x} \gets \mbf{x} + \nabla \mbf{x}$
+\ENDWHILE
+\RETURN x
+\end{algorithmic}
+\end{algorithm}
+
+
+\itemb{勾配法の問題点}{
+	1．微分ができなかったり，微分後の関数が複雑すぎる場合などに使えない．\\
+	2．最大値，最小値以外の局地（局所解）に到達してしまう可能性がある．そもそも停留点を求めている為．\\
+	3．関数によっては，なかなか極値に辿り着くまでに時間がかかる．
+}
+
+\section{ニュートン法}
+\subsection{1変数の場合}
+教科書に示す通り，x軸上の点$\ov{x}$の近くの点$\ov{x}+\Delta x$での関数$f(x)$の値はテイラー展開をして(3.2)式のように示される．
+$\Delta x$が小さいと3次以降の項は無視できるので，
+\eq{f(\ov{x}+\Delta x) =  f(\ov{x}) + f'(\ov{x})\Delta x + \frac{1}{2}f''(\ov{x})\Delta x^{2}}
+$f(\ov{x}+\Delta x) $の最大，または最小値を求められる$\Delta x$を求めて，それに対応するxを求めたいので，これを$\Delta x$で微分します．すると，(3.3)式が出てきます．\\
+続きは教科書に．
+ニュートン法の擬似コードを以下に示す．
+\begin{algorithm}                      
+\caption{\bf{procedure} $Newton(f'(x),f''(x))$}         
+\label{alg3}                          
+\begin{algorithmic}
+\STATE $x \gets x_{0}$
+\WHILE{$|x - \ov{x}|< \delta$}
+\STATE $\ov{x} \gets x$
+\STATE $ x \gets \ov{x}-\frac{f'(\ov{x})}{f''(\ov{x})}$
+\ENDWHILE
+\RETURN x
+\end{algorithmic}
+\end{algorithm}
+
+この関数$f(\ov{x}+\Delta x) $は$f(\ov{x}) $での傾きと，その傾きの変化の割合が同じような関数です．
+
+例題 3.1を解いてみてください．
+
+\subsection{多変数の場合}
+★教科書の補足★\\
+(1.65)式は，2次形式の微分の式．
+
+例題3.2を考えてみる．
+
+\subsection{ニュートン法の収束}
+
+ニュートン法は，\bf{2次収束}する．
+\itemb{2次収束}{
+	K回目とK+1回目での近似値と真値の差がほぼ2乗になる事．
+}
+\subsection{例題3.3}
+★教科書の補足★\\
+(3.41)式の求め方は，教科書p96（今回の分の最後から2番目のページ）に載ってます．\\
+ニュートン法の式に(3.39)，(3.41)式を代入すると，(3.42)式が得られます．\\
+この式と，
+\eq{
+	x^{K+1} = a + \epsilon^{K+1}   
+}
+より，(3.43)式が求まります．
+\subsection{例題3.4}
+★教科書の補足★\\
+難しい事しているように見えるかもだが，(3.21)式を求めてるだけ．
+
+\end{document}
